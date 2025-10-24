@@ -1,5 +1,5 @@
-echo "==============================BEGIN=COMPL==============================================="
-g++ -c source/main.cpp \
+echo "==============================BEGIN=COMPL=============================================="
+g++ -c source/main.cpp source/rellist.cpp source/rellist_err.cpp \
     -D _DEBUG -ggdb3 -std=c++17 -O0 -Wall -Wextra -Weffc++ -Waggressive-loop-optimizations \
     -Wc++14-compat -Wmissing-declarations -Wcast-align -Wcast-qual -Wchar-subscripts \
     -Wconditionally-supported -Wconversion -Wctor-dtor-privacy -Wempty-body -Wfloat-equal \
@@ -13,7 +13,6 @@ g++ -c source/main.cpp \
     -fsized-deallocation -fstack-protector -fstrict-overflow -flto-odr-type-merging \
     -fno-omit-frame-pointer -Wlarger-than=8192 -Wstack-usage=8192 -pie -fPIE -Werror=vla \
     -fsanitize=address,alignment,bool,bounds,enum,float-cast-overflow,float-divide-by-zero,integer-divide-by-zero,leak,nonnull-attribute,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,undefined,unreachable,vla-bound,vptr \
-    -o main.o
 
 echo "==============================BEGIN=LINK==============================================="
 g++ *.o -o rellists.exe \
