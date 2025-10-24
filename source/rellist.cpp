@@ -50,13 +50,26 @@ List_Err_t ListDtor ( List_t* list ) {
 
 List_Err_t AddToScPos ( List_t* list, List_Elem_t elem, size_t pos ) {
 
-    size_t sc_pos = list->next[pos];
-    size_t free = list->next[list->free];
+    if ( pos == list->tail ) {
 
-    list->data[list->free] = elem;
-    list->free = list->next[list->free];
+        size_t free = list->next[list->free];
 
-    list->next[pos] = list->free;
-    list->next[free] = list->next[sc_pos];
+        list->data[list->free] = elem;
+        list->free = list->next[list->free];
+
+        list->next[pos] = free;
+
+    } else {
+
+        size_t sc_pos = list->next[pos];
+        size_t free = list->next[list->free];
+
+        list->data[list->free] = elem;
+        list->free = list->next[list->free];
+
+        list->next[pos] = free;
+        list->next[free] = list->next[sc_pos];
+
+    }
 
 }
