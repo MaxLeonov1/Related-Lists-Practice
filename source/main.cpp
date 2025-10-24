@@ -12,6 +12,8 @@ int main() {
 
     ListCtor ( &list_1, capacity );
 
+    ListDump ( &list_1 );
+
     ListDtor ( &list_1 );
 
     return 0;
