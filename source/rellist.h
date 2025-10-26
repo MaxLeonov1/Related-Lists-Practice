@@ -21,13 +21,13 @@ typedef struct {
     List_Info_t info;
 
     List_Elem_t* data;
-    long capacity;
-    long head;
-    long free;
-    long tail;
+    size_t capacity;
+    size_t head;
+    size_t free;
+    size_t tail;
 
-    long* next;
-    long* prev;
+    size_t* next;
+    size_t* prev;
 
 } List_t;
 
@@ -43,16 +43,19 @@ typedef enum {
     LST_SUCCSESSFUL = 0,
     MEM_ALLOC_ERR = 1,
     FILE_OPEN_ERR = 2,
+    OUT_OF_BOUNDS_ERR = 3,
 
 } List_Err_t;
 
 /*=====================================================================================*/
 
-int  ListDump       ( List_t* list );
-void CreateGraphImg ( List_t* list );
+int  ListDump         ( List_t* list );
+void CreateGraphImg   ( List_t* list );
 
-List_Err_t ListCtor ( List_t* list ,size_t capacity );
-List_Err_t ListDtor ( List_t* list );
+List_Err_t ListCtor   ( List_t* list ,size_t capacity );
+List_Err_t ListDtor   ( List_t* list );
+List_Err_t AddToScPos ( List_t* list, List_Elem_t elem, size_t pos );
+List_Err_t AddToPos   ( List_t* list, List_Elem_t elem, size_t pos );
 
 
 #endif //__REL_LIST__

@@ -12,6 +12,11 @@ int main() {
 
     ListCtor ( &list_1, capacity );
 
+    AddToPos ( &list_1, 10, 1 );
+    AddToScPos ( &list_1, 20, 1 );
+    AddToScPos ( &list_1, 30, 2 );
+    AddToScPos ( &list_1, 40, 3 );
+
     ListDump ( &list_1 );
 
     ListDtor ( &list_1 );
