@@ -12,39 +12,18 @@ int ListDump ( List_t* list ) {
     char graphname[50] = {0};
 
     snprintf ( filename, sizeof(filename), "list_log_%d.htm", call_num );
-    snprintf ( graphname, sizeof(graphname), "graph_%d.jpg", call_num );
+    snprintf ( graphname, sizeof(graphname), "graph_%d.svg", call_num );
 
     call_num++;
 
     FILE* log_file = fopen ( filename, "w" );
 
-    fprintf ( log_file,
-        "<pre>\n" 
-        "<h3>[LIST INFO]:</h3>\n"
-        "name: %s\n"
-        "location: %s::%d\n"
-        "<h3>[LIST DATA]:</h3>\n"
-        "capacity: %lu\n",
-        list->info.name,
-        list->info.file,
-        list->info.line,
-        list->capacity );
+    fprintf ( log_file, 
+              "<pre>\n"
+              "<body style=\"background-color: lightblue;\">\n" );
 
-    fprintf ( log_file ,"data: " );
-    for ( size_t i = 0; i < list->capacity; i++ )
-        fprintf ( log_file, "%ld, ", list->data[i] );
-    fprintf ( log_file ,"\n" );
-
-    fprintf ( log_file ,"next: " );
-    for ( size_t i = 0; i < list->capacity; i++ )
-        fprintf ( log_file, "%lu, ", list->next[i] );
-    fprintf ( log_file ,"\n" );
-
-    fprintf ( log_file ,"prev: " );
-    for ( size_t i = 0; i < list->capacity; i++ )
-        fprintf ( log_file, "%lu, ", list->prev[i] );
-    fprintf ( log_file ,"\n" );
-
+    PrintLogHeader ( list, log_file );
+    
     fprintf ( log_file, "<h3>[IMG]:</h3>" );
 
     CreateGraphImg ( list, graphname );
@@ -62,6 +41,51 @@ int ListDump ( List_t* list ) {
 
 
 
+void PrintLogHeader ( List_t* list, FILE* log_file ) {
+
+    fprintf ( log_file,
+        "<h3>[LIST INFO]:</h3>\n"
+        "name: %s\n"
+        "location: %s::%d\n"
+        "<h3>[LIST DATA]:</h3>\n"
+        "capacity: %lu\n",
+        list->info.name,
+        list->info.file,
+        list->info.line,
+        list->capacity );
+
+    fprintf ( log_file ,"data: " );
+    for ( size_t i = 0; i < list->capacity; i++ ) {
+
+        if ( list->data[i] != POISON_VALUE )
+            fprintf ( log_file, "%8ld|", list->data[i] );
+        else
+            fprintf ( log_file, "  POISON|" );
+    }
+    fprintf ( log_file ,"\n" );
+
+
+    fprintf ( log_file ,"next: " );
+    for ( size_t i = 0; i < list->capacity; i++ )
+        fprintf ( log_file, "%8lu|", list->next[i] );
+    fprintf ( log_file ,"\n" );
+
+
+    fprintf ( log_file ,"prev: " );
+    for ( size_t i = 0; i < list->capacity; i++ ) {
+
+        if ( list->data[i] != POISON_VALUE )
+            fprintf ( log_file, "%8lu|", list->prev[i] );
+        else
+            fprintf ( log_file, "  POISON|" );
+
+    }
+    fprintf ( log_file ,"\n" );
+
+}
+
+
+
 void CreateGraphImg ( List_t* list, const char* graphname ) {
 
     FILE* graph_text = fopen ( "graph.txt", "w" );
@@ -69,17 +93,58 @@ void CreateGraphImg ( List_t* list, const char* graphname ) {
     fprintf ( graph_text, 
               "digraph structs {\n"
               "   rankdir = LR;\n"
-              "   edge [color = \"white\"]\n"
-              "   first [shape = Mrecord , label = \" root | <head> head: %lu | <tail> tail: %lu \"]\n",
-              list->head, list->tail );
+              "   bgcolor = \"lightblue\""
+              "   overlap = \"scale\";\n"
+              "   splines = \"ortho\";\n"
+              "   edge [color = \"#00000000\"]\n"
+              "   node_0 [shape = Mrecord, style = \"filled,bold\", fillcolor = \"#ff4040\", color = \"#ff8080\","
+              "label = \" ROOT | ind in arr: 0 | { head: %lu | tail: %lu } \"]\n",
+              list->next[0], list->prev[0] );
     
-    for ( size_t i = 0; i < list->capacity; i++ ) {
-        fprintf ( graph_text, 
-                  "   node_%lu [shape = Mrecord , label = \" data: %li | <next> next: %lu | <prev> prev: %lu \"]\n",
-                  i, list->data[i], list->next[i], list->prev[i]);
-    }
+    PrintGraphNodes ( list, graph_text );
 
-    fprintf ( graph_text, "   first ->" );
+    fprintf ( graph_text,
+              "   edge [color = \"#80ff80\", constraint = \"false\", penwidth=2.0]\n"
+              "   node_0 -> node_%lu;\n"
+              "   edge [color = \"#ff8080\", constraint = \"false\", penwidth=2.0]\n"
+              "   node_0 -> node_%lu;\n"
+              "   edge [color = \"#8080ff\", constraint = \"false\", penwidth=2.0]\n"
+              "   free [shape = Mrecord , color = \"blue\", lable = \"free: %lu\","
+              " style = \"filled,bold\", fillcolor = \"#4040ff\", color = \"#8080ff\"]\n"
+              "   free -> node_%lu;\n",
+              list->next[0], list->prev[0], list->free, list->free );
+
+    PrintEdgesForNext ( list, graph_text );
+    PrintEdgesForPrev ( list, graph_text );
+    PrintEdgesForFree ( list, graph_text );
+
+    fprintf ( graph_text, "}" );
+    fclose ( graph_text );
+
+    char cmd_line[100] = {0};
+    snprintf ( cmd_line, sizeof(cmd_line), "dot -Tsvg graph.txt -o %s", graphname );
+    system ( cmd_line );
+
+}
+
+
+
+void PrintGraphNodes ( List_t* list, FILE* graph_text ) {
+
+    for ( size_t i = 1; i < list->capacity; i++ ) {
+
+        if ( list->data[i] != POISON_VALUE )
+            fprintf ( graph_text, 
+                      "   node_%lu [shape = Mrecord , label = \" data: %ld | ind in arr: %lu | { next: %lu | prev: %lu } \","
+                      " style = \"filled,bold\", fillcolor = \"#40ff40\", color = \"#80ff80\"]\n",
+                      i, list->data[i], i, list->next[i], list->prev[i]);
+        else
+            fprintf ( graph_text, 
+                      "   node_%lu [shape = Mrecord , label = \" data: POISON | ind in arr: %lu | { next: %lu | prev: POISON } \","
+                      " style = \"filled,bold\", fillcolor = \"#4040ff\", color = \"#8080ff\"]\n",
+                      i, i, list->next[i]);
+
+    }
 
     for ( size_t i = 0; i <list->capacity; i++ ) {
 
@@ -90,47 +155,67 @@ void CreateGraphImg ( List_t* list, const char* graphname ) {
 
     }
 
-    fprintf ( graph_text,
-              "   edge [color = \"green\", constraint=\"false\"]\n"
-              "   first: <head> -> node_%lu;\n"
-              "   edge [color = \"red\", constraint=\"false\"]\n"
-              "   first: <tail> -> node_%lu;\n"
-              "   edge [color = \"blue\", constraint=\"false\"]\n"
-              "   free_p [shape = Mrecord , color = \"blue\", lable = \"free: %lu\"]\n"
-              "   free_p -> node_%lu: <next>;\n",
-              list->head, list->tail, list->free, list->free );
+}
 
-    /*Arrows for next*/
+
+
+void PrintEdgesForNext ( List_t* list, FILE* graph_text ) {
 
     fprintf ( graph_text, 
               "\n/*Arrows for next*/\n\n"
-              "   edge [color = \"blue\", constraint=\"false\"]\n" );
+              "   edge [color = \"#80ff80\", constraint = \"false\", penwidth=2.0]\n" );
 
     for ( size_t i = 1; i <= list->capacity - 1; i++ ) {
- 
-        if ( list->next[i] >= list->capacity ) break;
-        fprintf ( graph_text, "   node_%lu: <next> -> node_%lu: <next>;\n", i, list->next[i] );
+
+        if ( list->next[i] >= list->capacity )
+            break;
+
+        else if ( list->data[i] == POISON_VALUE )
+            continue;
+
+        else
+            fprintf ( graph_text, 
+                      "   node_%lu -> node_%lu;\n",
+                      i, list->next[i] );
 
     }
 
-    /*Arrows for prev*/
+}
+
+
+
+void PrintEdgesForPrev ( List_t* list, FILE* graph_text ) {
 
     fprintf ( graph_text, 
               "\n/*Arrows for prev*/\n\n"
-              "   edge [weight = 1, color = \"red\", constraint=\"false\"]\n" );
+              "   edge [color = \"#ff8080\", constraint = \"false\", penwidth=2.0]\n" );
 
     for ( size_t i = 1; i <= list->capacity - 1; i++ ) {
 
         if ( list->prev[i] == POISON_VALUE ) continue;
-        fprintf ( graph_text, "   node_%lu: <prev> -> node_%lu: <prev>;\n", i, list->prev[i] );
+        fprintf ( graph_text, "   node_%lu-> node_%lu;\n", i, list->prev[i] );
 
     }
 
-    fprintf ( graph_text, "}" );
-    fclose ( graph_text );
+}
 
-    char cmd_line[100] = {0};
-    snprintf ( cmd_line, sizeof(cmd_line), "dot -Tjpg -Gsplines=polyline graph.txt -o %s", graphname );
-    system ( cmd_line );
+
+
+void PrintEdgesForFree ( List_t* list, FILE* graph_text ) {
+
+    fprintf ( graph_text, 
+              "\n/*Arrows for free*/\n\n"
+              "   edge [color = \"#8080ff\", constraint = \"false\", penwidth=2.0]\n" );
+
+    size_t free_ind = list->free;
+
+    for ( size_t i = 1; i <= list->capacity - 1; i++ ) {
+
+        if ( list->next[free_ind] == list->capacity ) break;
+        fprintf ( graph_text, "   node_%lu-> node_%lu;\n", free_ind, list->next[free_ind] );
+        free_ind = list->next[free_ind];
+
+    }
+
 
 }

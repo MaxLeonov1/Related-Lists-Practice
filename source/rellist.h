@@ -2,6 +2,7 @@
 #define __REL_LIST__
 
 #include <stdlib.h>
+#include <stdio.h>
 
 /*=====================================================================================*/
 
@@ -22,9 +23,7 @@ typedef struct {
 
     List_Elem_t* data;
     size_t capacity;
-    size_t head;
     size_t free;
-    size_t tail;
 
     size_t* next;
     size_t* prev;
@@ -33,7 +32,7 @@ typedef struct {
 
 #define INIT_LIST(_name) List_t _name = { \
     {#_name, __LINE__, __FILE__},         \
-    nullptr, 0, 0, 0, 0, nullptr, nullptr    \
+    nullptr, 0, 0, nullptr, nullptr    \
 };
 
 /*=====================================================================================*/
@@ -59,8 +58,13 @@ typedef enum {
 
 /*=====================================================================================*/
 
-int  ListDump         ( List_t* list );
-void CreateGraphImg   ( List_t* list, const char* graphname );
+int  ListDump          ( List_t* list );
+void PrintLogHeader    ( List_t* list, FILE* log_file );
+void CreateGraphImg    ( List_t* list, const char* graphname );
+void PrintGraphNodes   ( List_t* list, FILE* graph_text );
+void PrintEdgesForNext ( List_t* list, FILE* graph_text );
+void PrintEdgesForPrev ( List_t* list, FILE* graph_text );
+void PrintEdgesForFree ( List_t* list, FILE* graph_text );
 
 List_Err_t ListCtor   ( List_t* list ,size_t capacity );
 List_Err_t ListDtor   ( List_t* list );
