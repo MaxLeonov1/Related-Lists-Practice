@@ -44,18 +44,30 @@ typedef enum {
     MEM_ALLOC_ERR = 1,
     FILE_OPEN_ERR = 2,
     OUT_OF_BOUNDS_ERR = 3,
+    EMPTY_LIST_DEL_ERR = 4,
 
 } List_Err_t;
 
 /*=====================================================================================*/
 
+#define RESET_POS( list, pos )       \
+    list->data[pos] = POISON_VALUE;  \
+    list->next[pos] = list->free;    \
+    list->free = pos;                \
+    list->prev[pos] = POISON_VALUE;  \
+
+
+/*=====================================================================================*/
+
 int  ListDump         ( List_t* list );
-void CreateGraphImg   ( List_t* list );
+void CreateGraphImg   ( List_t* list, const char* graphname );
 
 List_Err_t ListCtor   ( List_t* list ,size_t capacity );
 List_Err_t ListDtor   ( List_t* list );
 List_Err_t AddToScPos ( List_t* list, List_Elem_t elem, size_t pos );
 List_Err_t AddToPos   ( List_t* list, List_Elem_t elem, size_t pos );
+List_Err_t DelFromPos ( List_t* list, size_t pos );
+List_Err_t AllocMem   ( List_t* list );
 
 
 #endif //__REL_LIST__
