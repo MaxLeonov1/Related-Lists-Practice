@@ -5,18 +5,44 @@
 
 
 
-int ListDump ( List_t* list ) {
+void ListStatusHandler ( List_Err_t status ) {
+
+    switch (status) {
+
+        case List_Err_t::LST_SUCCSESSFUL:
+            break;
+        case List_Err_t::FILE_OPEN_ERR:
+            printf ( "[UNABLE TO OPEN FILE]\n" );
+            break;
+        case List_Err_t::EMPTY_LIST_DEL_ERR:
+            printf ( "[ATTEMPT TO DELETE FROM EMPTY LIST]\n" );
+            break;
+        case List_Err_t::MEM_ALLOC_ERR:
+            printf ( "[UNABLE TO ALLOCATE MEMORY]\n" );
+            break;
+        case List_Err_t::OUT_OF_BOUNDS_ERR:
+            printf ( "[OPERATION WITH UNEXISTING LIST ELEMENT]\n" );
+            break;
+
+    }
+
+}
+
+
+
+List_Err_t ListDump ( List_t* list, const char* log_dir ) {
 
     static int call_num = 1;
-    char filename[50] = {0};
-    char graphname[50] = {0};
+    char filename[100] = {0};
+    char graphname[100] = {0};
 
-    snprintf ( filename, sizeof(filename), "list_log_%d.htm", call_num );
+    snprintf ( filename, sizeof(filename), "%s/list_log_%d.htm", log_dir, call_num );
     snprintf ( graphname, sizeof(graphname), "graph_%d.svg", call_num );
 
     call_num++;
 
     FILE* log_file = fopen ( filename, "w" );
+    if ( log_file == nullptr ) return List_Err_t::FILE_OPEN_ERR;
 
     fprintf ( log_file, 
               "<pre>\n"
@@ -24,18 +50,18 @@ int ListDump ( List_t* list ) {
 
     PrintLogHeader ( list, log_file );
     
-    fprintf ( log_file, "<h3>[IMG]:</h3>" );
+    fprintf ( log_file, "<h3>[IMG]:</h3>\n" );
 
-    CreateGraphImg ( list, graphname );
+    CreateGraphImg ( list, graphname, log_dir );
 
     fprintf ( log_file, "<img "
-                        "src = \"%s\""
+                        "src = \"%s\" "
                         "style=\"width: 80vw; height: auto; max-width: 100%%;\" >",
                         graphname );
 
     fclose ( log_file );
 
-    return 0;
+    return List_Err_t::LST_SUCCSESSFUL;
 
 }
 
@@ -86,9 +112,13 @@ void PrintLogHeader ( List_t* list, FILE* log_file ) {
 
 
 
-void CreateGraphImg ( List_t* list, const char* graphname ) {
+void CreateGraphImg ( List_t* list, const char* graphname, const char* graph_dir ) {
 
-    FILE* graph_text = fopen ( "graph.txt", "w" );
+    char graph_txt_path[100] = {0};
+    char graph_svg_path[100] = {0};
+    snprintf ( graph_svg_path, sizeof(graph_svg_path), "%s/%s", graph_dir, graphname );
+    snprintf ( graph_txt_path, sizeof(graph_txt_path), "%s/graph.txt", graph_dir );
+    FILE* graph_text = fopen ( graph_txt_path, "w" );
 
     fprintf ( graph_text, 
               "digraph structs {\n"
@@ -96,6 +126,7 @@ void CreateGraphImg ( List_t* list, const char* graphname ) {
               "   bgcolor = \"lightblue\""
               "   overlap = \"scale\";\n"
               "   splines = \"ortho\";\n"
+              "   node [fontname=\"Helvetica-BoldOblique\", fontsize=\"11\"];\n"
               "   edge [color = \"#00000000\"]\n"
               "   node_0 [shape = Mrecord, style = \"filled,bold\", fillcolor = \"#ff4040\", color = \"#ff8080\","
               "label = \" ROOT | ind in arr: 0 | { head: %lu | tail: %lu } \"]\n",
@@ -121,8 +152,8 @@ void CreateGraphImg ( List_t* list, const char* graphname ) {
     fprintf ( graph_text, "}" );
     fclose ( graph_text );
 
-    char cmd_line[100] = {0};
-    snprintf ( cmd_line, sizeof(cmd_line), "dot -Tsvg graph.txt -o %s", graphname );
+    char cmd_line[300] = {0};
+    snprintf ( cmd_line, sizeof(cmd_line), "dot -Tsvg %s -o %s", graph_txt_path, graph_svg_path );
     system ( cmd_line );
 
 }

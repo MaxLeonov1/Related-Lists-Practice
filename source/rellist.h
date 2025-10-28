@@ -58,13 +58,14 @@ typedef enum {
 
 /*=====================================================================================*/
 
-int  ListDump          ( List_t* list );
-void PrintLogHeader    ( List_t* list, FILE* log_file );
-void CreateGraphImg    ( List_t* list, const char* graphname );
-void PrintGraphNodes   ( List_t* list, FILE* graph_text );
-void PrintEdgesForNext ( List_t* list, FILE* graph_text );
-void PrintEdgesForPrev ( List_t* list, FILE* graph_text );
-void PrintEdgesForFree ( List_t* list, FILE* graph_text );
+void       ListStatusHandler ( List_Err_t status );
+List_Err_t ListDump          ( List_t* list, const char* log_dir );
+void       PrintLogHeader    ( List_t* list, FILE* log_file );
+void       CreateGraphImg    ( List_t* list, const char* graphname, const char* graph_dir );
+void       PrintGraphNodes   ( List_t* list, FILE* graph_text );
+void       PrintEdgesForNext ( List_t* list, FILE* graph_text );
+void       PrintEdgesForPrev ( List_t* list, FILE* graph_text );
+void       PrintEdgesForFree ( List_t* list, FILE* graph_text );
 
 List_Err_t ListCtor   ( List_t* list ,size_t capacity );
 List_Err_t ListDtor   ( List_t* list );
