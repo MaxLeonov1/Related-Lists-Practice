@@ -1,5 +1,6 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/stat.h>
 
 #include "rellist.h"
 
@@ -12,16 +13,16 @@ void ListStatusHandler ( List_Err_t status ) {
         case List_Err_t::LST_SUCCSESSFUL:
             break;
         case List_Err_t::FILE_OPEN_ERR:
-            printf ( "[UNABLE TO OPEN FILE]\n" );
+            fprintf ( stderr, "[UNABLE TO OPEN FILE]\n" );
             break;
-        case List_Err_t::EMPTY_LIST_DEL_ERR:
-            printf ( "[ATTEMPT TO DELETE FROM EMPTY LIST]\n" );
+        case List_Err_t::DEL_FROM_NULLPTR_ERR:
+            fprintf ( stderr, "[ATTEMPT TO DELETE ROOT ELEMENT]\n" );
             break;
         case List_Err_t::MEM_ALLOC_ERR:
-            printf ( "[UNABLE TO ALLOCATE MEMORY]\n" );
+            fprintf ( stderr, "[UNABLE TO ALLOCATE MEMORY]\n" );
             break;
         case List_Err_t::OUT_OF_BOUNDS_ERR:
-            printf ( "[OPERATION WITH UNEXISTING LIST ELEMENT]\n" );
+            fprintf ( stderr, "[OPERATION WITH UNEXISTING LIST ELEMENT]\n" );
             break;
 
     }
@@ -30,21 +31,53 @@ void ListStatusHandler ( List_Err_t status ) {
 
 
 
-List_Err_t ListDump ( List_t* list, const char* log_dir ) {
+void CreateLogDir ( char* dir_name, int call_num ) {
+ 
+    char proj_path[MAX_STR_LEN] = {0};
+    time_t log_time_sec = time(NULL);
+    struct tm* log_time = localtime( &log_time_sec );
+    
+    getcwd(proj_path, sizeof(proj_path));
+    sprintf ( proj_path, "%s/logs", proj_path );
+    mkdir ( proj_path, 0755 ); 
+
+    sprintf ( dir_name,
+              "%s/log_%d.%d.%d_%d:%d:%d",
+              proj_path,
+              log_time->tm_mday,
+              log_time->tm_mon,
+              1900 + log_time->tm_year,
+              log_time->tm_hour,
+              log_time->tm_min,
+              log_time->tm_sec );
+    
+    mkdir ( dir_name, 0755 );
+
+}
+
+
+
+List_Err_t ListDump ( List_t* list ) {
+
+    List_Err_t status = List_Err_t::LST_SUCCSESSFUL;
 
     static int call_num = 1;
-    char filename[100] = {0};
-    char graphname[100] = {0};
+    char filename[MAX_STR_LEN] = {0};
+    char graphname[MAX_STR_LEN] = {0};
+    static char log_dir[MAX_STR_LEN] = {0};
 
-    snprintf ( filename, sizeof(filename), "%s/list_log_%d.htm", log_dir, call_num );
+    if (call_num == 1) CreateLogDir ( log_dir, call_num );
+
+    snprintf ( filename, sizeof(filename), "%s/list_log.htm", log_dir );
     snprintf ( graphname, sizeof(graphname), "graph_%d.svg", call_num );
 
     call_num++;
 
-    FILE* log_file = fopen ( filename, "w" );
+    FILE* log_file = fopen ( filename, "a" );
     if ( log_file == nullptr ) return List_Err_t::FILE_OPEN_ERR;
 
-    fprintf ( log_file, 
+    fprintf ( log_file,
+              "\n<div style=\"height:4px;background:#000\"/>\n" 
               "<pre>\n"
               "<body style=\"background-color: lightblue;\">\n" );
 
@@ -52,7 +85,8 @@ List_Err_t ListDump ( List_t* list, const char* log_dir ) {
     
     fprintf ( log_file, "<h3>[IMG]:</h3>\n" );
 
-    CreateGraphImg ( list, graphname, log_dir );
+    status =  CreateGraphImg ( list, graphname, log_dir );
+    LST_STAT_CHECK
 
     fprintf ( log_file, "<img "
                         "src = \"%s\" "
@@ -72,12 +106,13 @@ void PrintLogHeader ( List_t* list, FILE* log_file ) {
     fprintf ( log_file,
         "<h3>[LIST INFO]:</h3>\n"
         "name: %s\n"
-        "location: %s::%d\n"
+        "location: %s::%d, %s()\n"
         "<h3>[LIST DATA]:</h3>\n"
         "capacity: %lu\n",
         list->info.name,
         list->info.file,
         list->info.line,
+        list->info.func,
         list->capacity );
 
     fprintf ( log_file ,"data: " );
@@ -112,13 +147,15 @@ void PrintLogHeader ( List_t* list, FILE* log_file ) {
 
 
 
-void CreateGraphImg ( List_t* list, const char* graphname, const char* graph_dir ) {
+List_Err_t CreateGraphImg ( List_t* list, const char* graphname, const char* graph_dir ) {
 
-    char graph_txt_path[100] = {0};
-    char graph_svg_path[100] = {0};
+    char graph_txt_path[MAX_STR_LEN] = {0};
+    char graph_svg_path[MAX_STR_LEN] = {0};
     snprintf ( graph_svg_path, sizeof(graph_svg_path), "%s/%s", graph_dir, graphname );
     snprintf ( graph_txt_path, sizeof(graph_txt_path), "%s/graph.txt", graph_dir );
+
     FILE* graph_text = fopen ( graph_txt_path, "w" );
+    if ( graph_text == nullptr ) return List_Err_t::FILE_OPEN_ERR;
 
     fprintf ( graph_text, 
               "digraph structs {\n"
@@ -129,19 +166,19 @@ void CreateGraphImg ( List_t* list, const char* graphname, const char* graph_dir
               "   node [fontname=\"Helvetica-BoldOblique\", fontsize=\"11\"];\n"
               "   edge [color = \"#00000000\"]\n"
               "   node_0 [shape = Mrecord, style = \"filled,bold\", fillcolor = \"#ff4040\", color = \"#ff8080\","
-              "label = \" ROOT | ind in arr: 0 | { head: %lu | tail: %lu } \"]\n",
+              "label = \" ROOT | idx: 0 |{ head: %lu | tail: %lu }\"]\n",
               list->next[0], list->prev[0] );
     
     PrintGraphNodes ( list, graph_text );
 
     fprintf ( graph_text,
-              "   edge [color = \"#80ff80\", constraint = \"false\", penwidth=2.0]\n"
+              "   edge [color = \"#80ff80\", constraint = \"false\", penwidth = 2.0, arrowsize = 0.5]\n"
               "   node_0 -> node_%lu;\n"
-              "   edge [color = \"#ff8080\", constraint = \"false\", penwidth=2.0]\n"
+              "   edge [color = \"#ff8080\", constraint = \"false\", penwidth = 2.0, arrowsize = 0.5]\n"
               "   node_0 -> node_%lu;\n"
-              "   edge [color = \"#8080ff\", constraint = \"false\", penwidth=2.0]\n"
+              "   edge [color = \"#8080ff\", constraint = \"false\", penwidth = 2.0, arrowsize = 0.5]\n"
               "   free [shape = Mrecord , color = \"blue\", lable = \"free: %lu\","
-              " style = \"filled,bold\", fillcolor = \"#4040ff\", color = \"#8080ff\"]\n"
+              " style = \"filled,bold\", fillcolor = \"#5050ff\", color = \"#8080ff\"]\n"
               "   free -> node_%lu;\n",
               list->next[0], list->prev[0], list->free, list->free );
 
@@ -152,9 +189,11 @@ void CreateGraphImg ( List_t* list, const char* graphname, const char* graph_dir
     fprintf ( graph_text, "}" );
     fclose ( graph_text );
 
-    char cmd_line[300] = {0};
+    char cmd_line[MAX_STR_LEN] = {0};
     snprintf ( cmd_line, sizeof(cmd_line), "dot -Tsvg %s -o %s", graph_txt_path, graph_svg_path );
     system ( cmd_line );
+
+    return List_Err_t::LST_SUCCSESSFUL;
 
 }
 
@@ -166,13 +205,13 @@ void PrintGraphNodes ( List_t* list, FILE* graph_text ) {
 
         if ( list->data[i] != POISON_VALUE )
             fprintf ( graph_text, 
-                      "   node_%lu [shape = Mrecord , label = \" data: %ld | ind in arr: %lu | { next: %lu | prev: %lu } \","
+                      "   node_%lu [shape = Mrecord , label = \" data: %ld | idx: %lu |{ next: %lu | prev: %lu }\","
                       " style = \"filled,bold\", fillcolor = \"#40ff40\", color = \"#80ff80\"]\n",
                       i, list->data[i], i, list->next[i], list->prev[i]);
         else
             fprintf ( graph_text, 
-                      "   node_%lu [shape = Mrecord , label = \" data: POISON | ind in arr: %lu | { next: %lu | prev: POISON } \","
-                      " style = \"filled,bold\", fillcolor = \"#4040ff\", color = \"#8080ff\"]\n",
+                      "   node_%lu [shape = Mrecord , label = \" data: POISON | idx: %lu |{ next: %lu | prev: POISON }\","
+                      " style = \"filled,bold\", fillcolor = \"#5050ff\", color = \"#8080ff\"]\n",
                       i, i, list->next[i]);
 
     }
@@ -194,7 +233,7 @@ void PrintEdgesForNext ( List_t* list, FILE* graph_text ) {
 
     fprintf ( graph_text, 
               "\n/*Arrows for next*/\n\n"
-              "   edge [color = \"#80ff80\", constraint = \"false\", penwidth=2.0]\n" );
+              "   edge [color = \"#80ff80\", constraint = \"false\", penwidth = 2.0, arrowsize = 0.5]\n" );
 
     for ( size_t i = 1; i <= list->capacity - 1; i++ ) {
 
@@ -219,7 +258,7 @@ void PrintEdgesForPrev ( List_t* list, FILE* graph_text ) {
 
     fprintf ( graph_text, 
               "\n/*Arrows for prev*/\n\n"
-              "   edge [color = \"#ff8080\", constraint = \"false\", penwidth=2.0]\n" );
+              "   edge [color = \"#ff8080\", constraint = \"false\", penwidth = 2.0, arrowsize = 0.5]\n" );
 
     for ( size_t i = 1; i <= list->capacity - 1; i++ ) {
 
@@ -236,7 +275,7 @@ void PrintEdgesForFree ( List_t* list, FILE* graph_text ) {
 
     fprintf ( graph_text, 
               "\n/*Arrows for free*/\n\n"
-              "   edge [color = \"#8080ff\", constraint = \"false\", penwidth=2.0]\n" );
+              "   edge [color = \"#8080ff\", constraint = \"false\", penwidth = 2.0, arrowsize = 0.5]\n" );
 
     size_t free_ind = list->free;
 
