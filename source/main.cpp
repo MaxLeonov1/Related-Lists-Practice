@@ -15,14 +15,14 @@ int main() {
     ListStatusHandler ( InsertAfter( &list_1, 10, 0 ) );
     ListStatusHandler ( InsertAfter( &list_1, 20, 1 ) );
     ListStatusHandler ( Insert( &list_1, 5, 1 ) );
-    ListStatusHandler ( ListDump( &list_1 ) );
+    ListDump( &list_1 );
 
-    ListStatusHandler ( Delete( &list_1, 1 ) );
-    ListStatusHandler ( ListDump( &list_1 ) );
+    ListStatusHandler ( Delete( &list_1, 2 ) );
+    ListDump( &list_1 );
 
-    ListStatusHandler ( InsertAfter( &list_1, 7, 3 ) );
-    ListStatusHandler ( InsertAfter( &list_1, 17, 3 ) );
-    ListStatusHandler ( ListDump( &list_1 ) );
+    ListStatusHandler ( InsertAfter( &list_1, 9, 3 ) );
+    ListStatusHandler ( InsertAfter( &list_1, 8, 3 ) );
+    ListDump( &list_1 );
 
     
     ListDtor ( &list_1 );

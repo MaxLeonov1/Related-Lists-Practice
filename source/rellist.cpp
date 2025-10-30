@@ -7,20 +7,22 @@
 
 List_Err_t ListCtor ( List_t* list ,size_t capacity ) {
 
+    if ( list->capacity == 0 ) List_Err_t::ZERO_CAPACITY_ERR;
+
     list->data = (List_Elem_t*) calloc ( capacity, sizeof(List_Elem_t) );
     if ( list->data == nullptr ) return List_Err_t::MEM_ALLOC_ERR;
     for ( size_t i = 1; i < capacity; i++ )
-        list->data[i] = POISON_VALUE;
+        DATA(i) = POISON_VALUE;
 
     list->next = (size_t*) calloc ( capacity, sizeof(List_Elem_t) );
     if ( list->next == nullptr ) return List_Err_t::MEM_ALLOC_ERR;
     for ( size_t i = 1; i < capacity; i++ )
-        list->next[i] = i + 1;
+        NEXT(i) = i + 1;
 
     list->prev = (size_t*) calloc ( capacity, sizeof(List_Elem_t) );
     if ( list->prev == nullptr ) return List_Err_t::MEM_ALLOC_ERR;
     for ( size_t i = 1; i < capacity; i++ )
-        list->prev[i] = POISON_VALUE;
+        PREV(i) = POISON_VALUE;
 
     list->capacity = capacity;
     list->free = 1;
@@ -34,6 +36,7 @@ List_Err_t ListCtor ( List_t* list ,size_t capacity ) {
 List_Err_t ListDtor ( List_t* list ) {
 
     list->free = 0;
+    list->capacity = 0;
 
     free ( list->data );
     free ( list->next );
@@ -43,9 +46,12 @@ List_Err_t ListDtor ( List_t* list ) {
 
 }
 
-// TODO: DSL -> #define NEXT(elem) list->next[elem]
+
 
 List_Err_t InsertAfter ( List_t* list, List_Elem_t elem, size_t pos ) {
+
+    List_Err_t status = ListVerify ( list );
+    LST_STAT_CHECK
 
     if ( pos >= list->capacity - 2 )
         AllocMem ( list );
@@ -72,6 +78,9 @@ List_Err_t InsertAfter ( List_t* list, List_Elem_t elem, size_t pos ) {
 
 List_Err_t Insert ( List_t* list, List_Elem_t elem, size_t pos ) {
 
+    List_Err_t status = ListVerify ( list );
+    LST_STAT_CHECK
+
     if ( pos >= list->capacity - 1 )
         AllocMem ( list );
 
@@ -96,6 +105,9 @@ List_Err_t Insert ( List_t* list, List_Elem_t elem, size_t pos ) {
 
 
 List_Err_t Delete ( List_t* list, size_t pos ) {
+
+    List_Err_t status = ListVerify ( list );
+    LST_STAT_CHECK
 
     if ( pos == 0 ) return List_Err_t::DEL_FROM_NULLPTR_ERR;
 
@@ -124,6 +136,9 @@ List_Err_t Delete ( List_t* list, size_t pos ) {
 
 List_Err_t AllocMem ( List_t* list ) {
 
+    List_Err_t status = ListVerify ( list );
+    LST_STAT_CHECK
+
     list->data = (List_Elem_t*) realloc ( list->data, (list->capacity*2) * sizeof(List_Elem_t) );
     if ( list->data == nullptr ) return List_Err_t::MEM_ALLOC_ERR;
 
@@ -135,9 +150,9 @@ List_Err_t AllocMem ( List_t* list ) {
 
     for ( size_t i = list->capacity; i < list->capacity*2; i++ ) {
 
-        list->data[i] = POISON_VALUE;
-        list->prev[i] = POISON_VALUE;
-        list->next[i] = i + 1;
+        DATA(i) = POISON_VALUE;
+        PREV(i) = POISON_VALUE;
+        NEXT(i) = i + 1;
 
     }
 

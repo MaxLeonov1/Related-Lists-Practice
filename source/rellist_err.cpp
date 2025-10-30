@@ -4,7 +4,23 @@
 
 #include "rellist.h"
 
+/*=====================================================================================*/
 
+List_Err_t ListVerify ( List_t* list ) {
+
+    if ( list == nullptr ) return List_Err_t::LIST_T_NULL_ERR;
+    if ( list->capacity == 0 ) return List_Err_t::ZERO_CAPACITY_ERR;
+    if ( list->free == 0 || list->free > list->capacity ) return List_Err_t::INCOR_FREE_P_ERR;
+
+    if ( list->next == nullptr ) return List_Err_t::NEXT_NULL_ERR;
+    if ( list->data == nullptr ) return List_Err_t::DATA_NULL_ERR;
+    if ( list->prev == nullptr ) return List_Err_t::PREV_NULL_ERR;
+
+    return List_Err_t::LST_SUCCSESSFUL;
+
+}
+
+/*=====================================================================================*/
 
 void ListStatusHandler ( List_Err_t status ) {
 
@@ -24,12 +40,31 @@ void ListStatusHandler ( List_Err_t status ) {
         case List_Err_t::OUT_OF_BOUNDS_ERR:
             fprintf ( stderr, "[OPERATION WITH UNEXISTING LIST ELEMENT]\n" );
             break;
+        case List_Err_t::LIST_T_NULL_ERR:
+            fprintf ( stderr, "[NULL POINTER AT LIST STRUCTURE]\n" );
+            break;
+        case List_Err_t::ZERO_CAPACITY_ERR:
+            fprintf ( stderr, "[LIST HAS ZERO CAPACITY]\n" );
+            break;
+        case List_Err_t::INCOR_FREE_P_ERR:
+            fprintf ( stderr, "[FREE POINTER HAS POSITION OUT OF LIST]\n" );
+            break;
+        case List_Err_t::DATA_NULL_ERR:
+            fprintf ( stderr, "[DATA ARRAY IS NULL POINTER]\n" );
+            break;
+        case List_Err_t::NEXT_NULL_ERR:
+            fprintf ( stderr, "[NEXT ARRAY IS NULL POINTER]\n" );
+            break;
+        case List_Err_t::PREV_NULL_ERR:
+            fprintf ( stderr, "[PREV ARRAY IS NULL POINTER]\n" );
+            break;
+
 
     }
 
 }
 
-
+/*=====================================================================================*/
 
 void CreateLogDir ( char* dir_name, int call_num ) {
  
@@ -39,7 +74,7 @@ void CreateLogDir ( char* dir_name, int call_num ) {
     
     getcwd(proj_path, sizeof(proj_path));
     sprintf ( proj_path, "%s/logs", proj_path );
-    mkdir ( proj_path, 0755 ); 
+    mkdir ( proj_path, FILE_MODE ); 
 
     sprintf ( dir_name,
               "%s/log_%d.%d.%d_%d:%d:%d",
@@ -51,11 +86,11 @@ void CreateLogDir ( char* dir_name, int call_num ) {
               log_time->tm_min,
               log_time->tm_sec );
     
-    mkdir ( dir_name, 0755 );
+    mkdir ( dir_name, FILE_MODE );
 
 }
 
-
+/*=====================================================================================*/
 
 List_Err_t ListDump ( List_t* list ) {
 
@@ -99,7 +134,7 @@ List_Err_t ListDump ( List_t* list ) {
 
 }
 
-
+/*=====================================================================================*/
 
 void PrintLogHeader ( List_t* list, FILE* log_file ) {
 
@@ -145,7 +180,7 @@ void PrintLogHeader ( List_t* list, FILE* log_file ) {
 
 }
 
-
+/*=====================================================================================*/
 
 List_Err_t CreateGraphImg ( List_t* list, const char* graphname, const char* graph_dir ) {
 
@@ -197,7 +232,7 @@ List_Err_t CreateGraphImg ( List_t* list, const char* graphname, const char* gra
 
 }
 
-
+/*=====================================================================================*/
 
 void PrintGraphNodes ( List_t* list, FILE* graph_text ) {
 
@@ -227,7 +262,7 @@ void PrintGraphNodes ( List_t* list, FILE* graph_text ) {
 
 }
 
-
+/*=====================================================================================*/
 
 void PrintEdgesForNext ( List_t* list, FILE* graph_text ) {
 
@@ -252,7 +287,7 @@ void PrintEdgesForNext ( List_t* list, FILE* graph_text ) {
 
 }
 
-
+/*=====================================================================================*/
 
 void PrintEdgesForPrev ( List_t* list, FILE* graph_text ) {
 
@@ -269,7 +304,7 @@ void PrintEdgesForPrev ( List_t* list, FILE* graph_text ) {
 
 }
 
-
+/*=====================================================================================*/
 
 void PrintEdgesForFree ( List_t* list, FILE* graph_text ) {
 
