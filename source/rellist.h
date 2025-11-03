@@ -7,13 +7,23 @@
 
 /*=====================================================================================*/
 
-#define FILE_MODE 0755
-#define MAX_STR_LEN 500
+#define FILE_MODE_ 0755
+#define MAX_STR_LEN_ 500
 
 #define NEXT(pos) list->next[pos]
 #define PREV(pos) list->prev[pos]
 #define DATA(pos) list->data[pos]
 #define FREE_P list->free
+
+#define EDGE_STD_SET_ "constraint = \"false\", penwidth = 2.0, arrowsize = 0.5"
+
+/*=====================================================================================*/
+
+#define NEXT_EDGE_COL_ "\"#2563eb\""
+#define PREV_EDGE_COL_ "\"#ffb3b3\""
+#define BOTH_EDGE_COL_ "\"#6b7280\""
+#define FREE_EDGE_COL_ "\"#b3b3ff\""
+#define BAD_EDGE_COL_  "\"#dc2626\""
 
 /*=====================================================================================*/
 
@@ -35,6 +45,7 @@ typedef struct {
 
     List_Elem_t* data;
     size_t capacity;
+    size_t size;
     size_t free;
 
     size_t* next;
@@ -44,7 +55,7 @@ typedef struct {
 
 #define INIT_LIST(_name) List_t _name = { \
     {#_name, __LINE__, __FILE__, __FUNCTION__},         \
-    nullptr, 0, 0, nullptr, nullptr    \
+    nullptr, 0, 0, 0, nullptr, nullptr    \
 };
 
 /*=====================================================================================*/
@@ -62,12 +73,12 @@ typedef enum {
     NEXT_NULL_ERR = 8,
     PREV_NULL_ERR = 9,
     INCOR_FREE_P_ERR = 10,
+    SIZE_MORE_CAPACITY_ERR = 11,
+    UNCYCLED_NEXT_ERR = 12,
+    UNCYCLED_PREV_ERR = 13,
+    INCOR_FREE_ORDER_ERR = 14,
 
 } List_Err_t;
-
-/*=====================================================================================*/
-
-#define LST_STAT_CHECK if ( status != List_Err_t::LST_SUCCSESSFUL ) return status;
 
 /*=====================================================================================*/
 
@@ -78,9 +89,9 @@ void       CreateLogDir      ( char* dir_name, int call_num );
 void       PrintLogHeader    ( List_t* list, FILE* log_file );
 List_Err_t CreateGraphImg    ( List_t* list, const char* graphname, const char* graph_dir );
 void       PrintGraphNodes   ( List_t* list, FILE* graph_text );
-void       PrintEdgesForNext ( List_t* list, FILE* graph_text );
-void       PrintEdgesForPrev ( List_t* list, FILE* graph_text );
-void       PrintEdgesForFree ( List_t* list, FILE* graph_text );
+void       PrintEdges        ( List_t* list, FILE* graph_text );
+
+/*=====================================================================================*/
 
 List_Err_t ListCtor    ( List_t* list ,size_t capacity );
 List_Err_t ListDtor    ( List_t* list );
@@ -89,5 +100,11 @@ List_Err_t Insert      ( List_t* list, List_Elem_t elem, size_t pos );
 List_Err_t Delete      ( List_t* list, size_t pos );
 List_Err_t AllocMem    ( List_t* list );
 
+/*=====================================================================================*/
+
+#define LST_STAT_CHECK if ( status != List_Err_t::LST_SUCCSESSFUL ) return status;
+// #define VERIF_LIST( list ) ListStatusHandler( ListVerify( &list ) );
+
+/*=====================================================================================*/
 
 #endif //__REL_LIST__
